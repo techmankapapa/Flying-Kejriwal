@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Game</title>
+
+<style>
+body{
+margin:0;
+overflow:hidden;
+background-image:url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQy2DKKaCd5JYc8YJbk6LMV4l69_vWK2az2g&s");
+background-size:cover;
+font-family:Arial;
+}
+
+#score{
+position:absolute;
+top:10px;
+left:50%;
+transform:translateX(-50%);
+font-size:28px;
+color:white;
+font-weight:bold;
+text-shadow:2px 2px 4px #000;
+}
+
+#gameOverImage{
+display:none;
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%) scale(1);
+width:250px;
+border:5px solid white;
+border-radius:10px;
+z-index:10;
+}
+
+#restartBtn{
+position:absolute;
+top:75%;
+left:50%;
+transform:translateX(-50%);
+padding:12px 24px;
+font-size:20px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+display:none;
+z-index:20;
+}
+
+canvas{
+display:block;
+}
+</style>
+
+</head>
+
+<body>
+
+<div id="score">Score: 0</div>
+
+<img id="gameOverImage" src="https://i.ibb.co/WNXgYRHQ/image-2026-03-11-181741408.png">
+
+<button id="restartBtn">Restart</button>
+
+<audio id="deathSound">
+<source src="death.mp3" type="audio/mpeg">
+</audio>
+
+<canvas id="canvas"></canvas>
+
+<script>
+
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+const deathSound=document.getElementById("deathSound");
+
+const scoreEl=document.getElementById("score");
+const gameOverImage=document.getElementById("gameOverImage");
+const restartBtn=document.getElementById("restartBtn");
+
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+let bird={
+x:120,
+y:200,
+size:60,
+gravity:0.5,
+lift:-10,
+velocity:0
+};
+
+let pipes=[];
+let frame=0;
+let score=0;
+let gameOver=false;
+
+const playerImg=new Image();
+playerImg.src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-R6LNdV3nSWG61c6-WIfuI8HQOERgcoBBaQ&s";
+
+const pipeImg=new Image();
+pipeImg.src="https://upload.wikimedia.org/wikipedia/commons/5/5f/The_official_portrait_of_Shri_Narendra_Modi%2C_the_Prime_Minister_of_the_Republic_of_India.jpg";
+
+document.addEventListener("keydown",e=>{
+if(e.code==="Space" && !gameOver){
+bird.velocity=bird.lift;
+}
+});
+
+document.addEventListener("click",()=>{
+if(!gameOver){
+bird.velocity=bird.lift;
+}
+});
+
+function createPipe(){
+const gap=200;
+const topHeight=Math.random()*300+100;
+
+pipes.push({
+x:canvas.width,
+y:0,
+width:140,
+height:topHeight,
+passed:false
+});
+
+pipes.push({
+x:canvas.width,
+y:topHeight+gap,
+width:140,
+height:canvas.height-(topHeight+gap),
+passed:false
+});
+}
+
+function update(){
+
+if(gameOver)return;
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+ctx.drawImage(playerImg,bird.x-bird.size/2,bird.y-bird.size/2,bird.size,bird.size);
+
+if(frame%150===0)createPipe();
+
+for(let i=0;i<pipes.length;i++){
+
+let p=pipes[i];
+p.x-=3;
+
+ctx.drawImage(pipeImg,p.x,p.y,p.width,p.height);
+
+if(!p.passed && p.x+p.width<bird.x){
+p.passed=true;
+score++;
+scoreEl.innerText="Score: "+score;
+}
+
+if(
+bird.x+bird.size/2>p.x &&
+bird.x-bird.size/2<p.x+p.width &&
+bird.y+bird.size/2>p.y &&
+bird.y-bird.size/2<p.y+p.height
+){
+endGame();
+}
+}
+
+if(pipes.length>0 && pipes[0].x+pipes[0].width<0){
+pipes.splice(0,2);
+}
+
+if(bird.y+bird.size/2>canvas.height || bird.y<0){
+endGame();
+}
+
+bird.velocity+=bird.gravity;
+bird.y+=bird.velocity;
+
+frame++;
+
+requestAnimationFrame(update);
+}
+
+function endGame(){
+
+if(gameOver)return;
+
+gameOver=true;
+
+deathSound.currentTime=0;
+deathSound.play().catch(()=>{});
+
+gameOverImage.style.display="block";
+restartBtn.style.display="block";
+
+startZoom();
+}
+
+function startZoom(){
+
+let scale=1;
+
+function animate(){
+scale+=0.05;
+
+gameOverImage.style.transform=
+`translate(-50%,-50%) scale(${scale})`;
+
+if(scale<4){
+requestAnimationFrame(animate);
+}
+}
+
+requestAnimationFrame(animate);
+}
+
+function resetGame(){
+
+gameOver=false;
+
+score=0;
+scoreEl.innerText="Score: 0";
+
+bird.y=200;
+bird.velocity=0;
+
+pipes=[];
+frame=0;
+
+gameOverImage.style.display="none";
+restartBtn.style.display="none";
+
+gameOverImage.style.transform="translate(-50%,-50%) scale(1)";
+
+update();
+}
+
+restartBtn.addEventListener("click",resetGame);
+
+update();
+
+</script>
+
+</body>
+</html>
