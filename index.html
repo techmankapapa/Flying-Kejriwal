@@ -226,6 +226,10 @@ function resetGame(){
 
 gameOver=false;
 
+// 🔊 STOP sound immediately on restart
+deathSound.pause();
+deathSound.currentTime=0;
+
 score=0;
 scoreEl.innerText="Score: 0";
 
